@@ -25,9 +25,41 @@ code {
     --gp-bubble: #ffc2dc;
     --gp-cream: #fff5fa;
     --gp-lilac: #d9b8ff;
+    --gp-thistle: #c9a3d9;
+    --gp-thistle-deep: #9b6cb5;
     --gp-gloss: #ffffff;
     --gp-deep: #4a1f3a;
 }
+
+/* Streamers */
+@keyframes streamer-sway {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2deg); }
+}
+.streamer {
+    position: absolute;
+    top: -10px;
+    width: 6px;
+    height: 160px;
+    border-radius: 4px;
+    transform-origin: top center;
+    animation: streamer-sway 3s ease-in-out infinite;
+}
+
+/* Party popper burst */
+@keyframes pop-burst {
+    0% { transform: scale(0.6) rotate(-10deg); opacity: 0; }
+    40% { transform: scale(1.15) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.pop-in { animation: pop-burst 0.6s cubic-bezier(.17,.67,.32,1.5) both; }
+
+/* Marquee */
+@keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.marquee-track { animation: marquee 28s linear infinite; }
 
 /* Selection */
 ::selection {

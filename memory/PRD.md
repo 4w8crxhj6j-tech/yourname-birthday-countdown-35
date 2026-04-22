@@ -2,37 +2,43 @@
 
 ## Problem Statement
 > Create a fun birthday website add a section which has things i want for my birthday my birthday day and a timer for that day
+> **v2**: Full party theme (poppers, confetti, streamers), RSVP, shareable link, expanded wishlist (penthouse, car/cash, Koh Samui vacation + shopping, Tomorrowland tix), Brokee Clause (dance performance for the broke ones, 1 gift / 1 person, no empty-handers). Loves thistle.
 
-## User Inputs
-- Birthday date: **June 23, 2026**
-- Heading: "It's the bestest, sweetest human in the world's birthday"
-- Vibe: Girlypop / bows / lipgloss / diva core (playful + colorful)
-- Wishlist: Pre-filled, editable later in code
-- Wishlist items: Claude subscription, Copy.ai (ANNUAL), new bag, New Balance casuals, sparkly earrings, Bunty Mahajan cake
+## Vibe / Design
+- Girlypop + party core: hot pink + thistle (`#9b6cb5`) + lilac accents, cream/white backdrop
+- Fonts: Caveat Brush (display) + Fredoka (hero) + Pacifico (script) + Quicksand (body)
+- Animations: canvas-confetti bursts, CSS rise/wiggle/sparkle/heartbeat, streamers, marquee
 
 ## Architecture
-- Pure frontend (React 19 + Tailwind + shadcn/ui base). No backend required.
-- Files touched:
-  - `/app/frontend/src/App.js` — single-page layout (hero, countdown, wishlist, footer)
-  - `/app/frontend/src/index.css` — girlypop palette, fonts (Caveat Brush / Fredoka / Pacifico / Quicksand), animations, stickers
-  - `/app/frontend/src/App.css` — reset
-  - `/app/frontend/src/components/Bow.jsx` — custom SVG bow/sparkle/heart
+- **Backend** (FastAPI, `/app/backend/server.py`):
+  - `POST /api/rsvp` (validates name + gift; rejects empty-handers)
+  - `GET /api/rsvp` (list — newest first)
+  - `GET /api/rsvp/stats` (totals + claimed gifts)
+  - MongoDB collection: `rsvps`
+- **Frontend** (`/app/frontend/src/App.js`):
+  - Sections: Hero w/ streamers, Marquee, Countdown, Brokee Clause, Wishlist, RSVP + Guest Wall, Footer
+  - `canvas-confetti` for poppers + side bursts on load, gift claim, RSVP submit, share
+  - `navigator.share` / clipboard fallback for share button
+  - Claimed-gift badge reads from `/api/rsvp/stats`; dropdown disables claimed items (1 gift / 1 person)
 
-## Implemented (2026-04-22)
-- Hero with polaroid save-the-date card, wiggle bows, gradient text
-- Live countdown (days / hrs / min / sec) auto-ticking to 2026-06-23
-- 6 wishlist cards with sticker bows, holo tags, "I'll get this" buttons + sonner toast
-- Floating bow / sparkle / heart decor rising in background
-- "It's today!" celebration state when the timer hits zero
-- Responsive 1 → 2 → 3 column wishlist grid, mobile hero
-- Footer "see you on June 23" CTA card
+## Implemented
+### 2026-04-22 (v1)
+- Hero, countdown, static wishlist (6 items), polaroid save-the-date
+### 2026-04-22 (v2 — party)
+- Streamers on hero, 3-rule "Brokee Clause" panel, rules marquee
+- Expanded wishlist: sea-facing penthouse, car (cash bundle), Koh Samui vacation, Koh Samui shopping $$$, Tomorrowland tickets + original 6
+- Confetti on page load, "pop the confetti" CTA, claim clicks, RSVP submit, share
+- RSVP form (name, attending yes/maybe/no, gift dropdown w/ claimed state, brokee dance input, message) → MongoDB
+- Guest Wall showing recent RSVPs
+- Share button: Web Share API + clipboard fallback
+- Thistle accents across headers, gradients, rules section
 
 ## Backlog
-- **P1**: Optional backend wishlist CRUD (currently hard-coded)
-- **P2**: RSVP form / guest book persisted to MongoDB
-- **P2**: Shareable invite link with OG image
-- **P2**: Confetti burst on birthday day / when clicking "I'll get this"
-- **P2**: Add a photo upload slot for the polaroid hero
+- **P2**: Admin page to view all RSVPs + export CSV
+- **P2**: OG image / meta tags for shareable preview
+- **P2**: Brokee dance video upload (fal.ai or Cloudinary)
+- **P2**: Countdown push notification / email reminder
+- **P3**: Theme-switch (girlypop ↔ neon party)
 
 ## Next Tasks
-- Ship to the birthday girl, collect feedback, then layer in RSVP or editable wishlist if desired.
+- Share with guests. If they start flooding in, add admin view + OG image.
