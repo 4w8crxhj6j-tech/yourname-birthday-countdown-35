@@ -1,21 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import axios from "axios";
 import confetti from "canvas-confetti";
 import {
   Sparkles, Gift, PartyPopper, Cake, Crown, ShoppingBag,
-  Home, Car, Plane, Ticket, Wallet, Share2, Music2, Copy, Check, Send
+  Home, Car, Plane, Ticket, Wallet, Share2, Music2, Check,
+  MessageCircle
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import "@/App.css";
 import { Bow, Sparkle, Heart } from "@/components/Bow";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
 const BIRTHDAY_ISO = "2026-06-23T00:00:00";
 const BIRTHDAY_LABEL = "June 23, 2026";
-const AGE_TURNING = 20; // born 2006 → turning 20 on 2026-06-23
-const TOTAL_WISHLIST = 11;
+const AGE_TURNING = 20;
 
 const WISHLIST = [
   { id: 1, title: "Sea-Facing Penthouse", tag: "house-warming 101", note: "With a balcony where the breeze and the drama both hit different. Keys on June 23 pls.", icon: Home, accent: "#ff3d8a" },
@@ -33,15 +29,11 @@ const WISHLIST = [
 
 // ===== Confetti helpers =====
 const fireConfetti = (opts = {}) => {
-  const defaults = {
-    particleCount: 80,
-    spread: 70,
-    startVelocity: 40,
-    scalar: 1,
-    ticks: 200,
+  confetti({
+    particleCount: 80, spread: 70, startVelocity: 40, scalar: 1, ticks: 200,
     colors: ["#ff3d8a", "#ff80b5", "#ffc2dc", "#d9b8ff", "#c9a3d9", "#ffffff", "#9b6cb5"],
-  };
-  confetti({ ...defaults, origin: { y: 0.6 }, ...opts });
+    origin: { y: 0.6 }, ...opts,
+  });
 };
 
 const fireFromSides = () => {
@@ -83,28 +75,6 @@ function useCountdown(target) {
   return t;
 }
 
-// Animated number
-function useCountUp(target, dur = 900) {
-  const [v, setV] = useState(0);
-  const from = useRef(0);
-  useEffect(() => {
-    const start = performance.now();
-    const startVal = from.current;
-    const delta = (target || 0) - startVal;
-    let raf;
-    const tick = (now) => {
-      const p = Math.min(1, (now - start) / dur);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setV(Math.round(startVal + delta * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
-      else from.current = target || 0;
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, dur]);
-  return v;
-}
-
 // ===== Small UI bits =====
 const TimerCell = ({ value, label }) => (
   <div
@@ -119,84 +89,6 @@ const TimerCell = ({ value, label }) => (
     </span>
   </div>
 );
-
-const StatTile = ({ value, label, sub, color, icon: Icon, testid }) => {
-  const v = useCountUp(value);
-  return (
-    <div
-      data-testid={testid}
-      className="rounded-[28px] bg-white border-2 p-5 md:p-6 flex flex-col items-center text-center relative overflow-hidden"
-      style={{ borderColor: color + "55", boxShadow: `0 10px 30px ${color}22` }}
-    >
-      <span className="absolute -top-3 -right-3 w-16 h-16 rounded-full opacity-10" style={{ background: color }} />
-      <Icon size={22} strokeWidth={2.5} style={{ color }} />
-      <div className="font-hero text-4xl md:text-5xl mt-2 tabular-nums" style={{ color }}>
-        {v}
-      </div>
-      <div className="font-hero text-[11px] md:text-xs uppercase tracking-[0.22em] text-[#4a1f3a] mt-1">
-        {label}
-      </div>
-      {sub && <div className="font-script text-sm md:text-base mt-1" style={{ color }}>{sub}</div>}
-    </div>
-  );
-};
-
-const PartyStats = ({ stats }) => {
-  const yes = stats?.yes || 0;
-  const brokees = stats?.brokees || 0;
-  const claimed = stats?.claimed_wishlist_count || 0;
-  const progress = Math.min(100, Math.round((claimed / TOTAL_WISHLIST) * 100));
-
-  let snark = "still room for everyone ♡";
-  if (yes === 0) snark = "be the first bestie to lock it in";
-  else if (yes < 5) snark = `${yes} brave souls so far`;
-  else if (yes < 15) snark = "the guest list is heating up";
-  else snark = "sold-out energy ♡";
-
-  let brokeeSnark = "no dancers yet… suspicious";
-  if (brokees === 1) brokeeSnark = "1 brave brokee booked a routine";
-  else if (brokees > 1) brokeeSnark = `${brokees} performances incoming`;
-
-  let giftSnark = "the wishlist is wide open";
-  if (claimed === TOTAL_WISHLIST) giftSnark = "ICONIC — wishlist sold out ♡";
-  else if (claimed >= TOTAL_WISHLIST - 2) giftSnark = "almost cleared, quick ♡";
-  else if (claimed > 0) giftSnark = `${TOTAL_WISHLIST - claimed} gifts unclaimed`;
-
-  return (
-    <div className="max-w-5xl mx-auto px-6 pb-6" data-testid="party-stats">
-      <div className="text-center mb-6">
-        <span className="font-body text-xs uppercase tracking-[0.3em] text-[#9b6cb5]">
-          ✦ live party tracker ✦
-        </span>
-        <h2 className="font-display text-3xl md:text-5xl text-[#4a1f3a] mt-2">
-          the <span className="text-[#ff3d8a]">vibe check</span> board
-        </h2>
-      </div>
-      <div className="grid grid-cols-3 gap-3 md:gap-5">
-        <StatTile testid="stat-besties" value={yes} label="besties confirmed" sub={snark} color="#ff3d8a" icon={PartyPopper} />
-        <StatTile testid="stat-gifts" value={claimed} label={`gifts claimed / ${TOTAL_WISHLIST}`} sub={giftSnark} color="#9b6cb5" icon={Gift} />
-        <StatTile testid="stat-brokees" value={brokees} label="brokees dancing" sub={brokeeSnark} color="#c9a3d9" icon={Music2} />
-      </div>
-
-      <div className="mt-5">
-        <div className="flex items-center justify-between font-body text-xs uppercase tracking-[0.2em] text-[#7a3a5f] mb-2">
-          <span>wishlist progress</span>
-          <span data-testid="progress-text">{claimed}/{TOTAL_WISHLIST} ({progress}%)</span>
-        </div>
-        <div className="h-3 rounded-full bg-[#ffe4f1] overflow-hidden border border-[#ffc2dc]">
-          <div
-            data-testid="progress-bar"
-            className="h-full rounded-full transition-all duration-700"
-            style={{
-              width: `${progress}%`,
-              background: "linear-gradient(90deg, #ff3d8a 0%, #c9a3d9 60%, #9b6cb5 100%)",
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const Streamers = () => {
   const colors = ["#ff3d8a", "#ff80b5", "#d9b8ff", "#c9a3d9", "#ffc2dc", "#9b6cb5"];
@@ -260,9 +152,8 @@ const FloatingDecor = () => {
   );
 };
 
-const WishCard = ({ item, idx, claimedGifts }) => {
+const WishCard = ({ item, idx }) => {
   const Icon = item.icon;
-  const isClaimed = claimedGifts.includes(item.title);
   return (
     <div
       data-testid={`wish-card-${item.id}`}
@@ -272,14 +163,6 @@ const WishCard = ({ item, idx, claimedGifts }) => {
       <div className="absolute -top-5 -left-5 animate-wiggle">
         <Bow size={56} color={item.accent} ribbon="#ffd6e8" />
       </div>
-      {isClaimed && (
-        <div
-          data-testid={`wish-claimed-${item.id}`}
-          className="absolute -top-3 right-4 rotate-6 px-3 py-1 rounded-full bg-[#9b6cb5] text-white font-hero text-[10px] uppercase tracking-[0.2em] border-2 border-white shadow-lg"
-        >
-          claimed ♡
-        </div>
-      )}
 
       <div className="flex items-start justify-between gap-3 mb-3 pl-10">
         <div className="flex items-center gap-2 flex-wrap">
@@ -306,10 +189,9 @@ const WishCard = ({ item, idx, claimedGifts }) => {
               (rect.left + rect.width / 2) / window.innerWidth,
               (rect.top + rect.height / 2) / window.innerHeight
             );
-            document.getElementById("rsvp")?.scrollIntoView({ behavior: "smooth" });
-            // Pre-select in the RSVP form
-            window.__presetGift = item.title;
-            window.dispatchEvent(new Event("preset-gift"));
+            toast.success(`Screenshot this & DM me — ${item.title} ♡`, {
+              style: { background: "#fff", color: "#4a1f3a", border: "2px solid #ff80b5", borderRadius: "18px", fontFamily: "Quicksand, sans-serif" },
+            });
           }}
           className="font-hero text-xs uppercase tracking-[0.18em] px-4 py-2 rounded-full bg-[#fff0f6] border-2 border-[#ff80b5] text-[#ff3d8a] hover:bg-[#ff3d8a] hover:text-white transition-colors"
         >
@@ -320,188 +202,11 @@ const WishCard = ({ item, idx, claimedGifts }) => {
   );
 };
 
-// ===== RSVP Form =====
-const RsvpForm = ({ claimedGifts, onSubmitted }) => {
-  const [form, setForm] = useState({ name: "", attending: "yes", gift: "", performance: "", message: "" });
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    const handler = () => {
-      if (window.__presetGift) setForm((f) => ({ ...f, gift: window.__presetGift }));
-    };
-    window.addEventListener("preset-gift", handler);
-    return () => window.removeEventListener("preset-gift", handler);
-  }, []);
-
-  const isBrokee = form.gift.trim().toLowerCase() === "i'm a brokee (i'll dance)";
-
-  const submit = async (e) => {
-    e.preventDefault();
-    if (!form.name.trim()) return toast.error("Put your name bestie ♡");
-    if (!form.gift.trim()) return toast.error("Empty-handed = escorted out. Pick a gift or dance.");
-    if (isBrokee && !form.performance.trim()) return toast.error("If you're broke, drop your dance routine in the box ♡");
-    setSubmitting(true);
-    try {
-      await axios.post(`${API}/rsvp`, {
-        name: form.name,
-        attending: form.attending,
-        gift: form.gift,
-        performance: form.performance || null,
-        message: form.message || null,
-      });
-      fireFromSides();
-      popperBurst(0.5, 0.4);
-      toast.success(`RSVP in! See you June 23, ${form.name} ♡`, {
-        style: { background: "#fff", color: "#4a1f3a", border: "2px solid #ff80b5", borderRadius: "18px", fontFamily: "Quicksand, sans-serif" },
-      });
-      setForm({ name: "", attending: "yes", gift: "", performance: "", message: "" });
-      onSubmitted?.();
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || "Something flopped. Try again ♡");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const inputCls = "w-full px-4 py-3 rounded-2xl bg-white border-2 border-[#ffc2dc] focus:border-[#ff3d8a] focus:outline-none focus:ring-4 focus:ring-[#ff3d8a]/15 font-body text-[#4a1f3a] placeholder:text-[#c18aa6]";
-
-  return (
-    <form onSubmit={submit} className="grid md:grid-cols-2 gap-4" data-testid="rsvp-form">
-      <div className="md:col-span-2">
-        <label className="font-hero text-xs uppercase tracking-[0.2em] text-[#9b6cb5] mb-1 block">Your name ♡</label>
-        <input
-          data-testid="rsvp-name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          placeholder="e.g. Bestie #1"
-          className={inputCls}
-          maxLength={60}
-        />
-      </div>
-
-      <div>
-        <label className="font-hero text-xs uppercase tracking-[0.2em] text-[#9b6cb5] mb-1 block">Are you coming?</label>
-        <div className="flex gap-2">
-          {[
-            { k: "yes", label: "absolutely" },
-            { k: "maybe", label: "maybe" },
-            { k: "no", label: "i'll be missed" },
-          ].map((o) => (
-            <button
-              key={o.k}
-              type="button"
-              data-testid={`rsvp-attending-${o.k}`}
-              onClick={() => setForm({ ...form, attending: o.k })}
-              className={`flex-1 px-3 py-3 rounded-2xl font-hero uppercase tracking-[0.15em] text-[11px] border-2 transition-all ${
-                form.attending === o.k
-                  ? "bg-[#ff3d8a] text-white border-[#ff3d8a] shadow-md"
-                  : "bg-white text-[#ff3d8a] border-[#ffc2dc] hover:border-[#ff3d8a]"
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className="font-hero text-xs uppercase tracking-[0.2em] text-[#9b6cb5] mb-1 block">What are you bringing? 🎁</label>
-        <select
-          data-testid="rsvp-gift"
-          value={form.gift}
-          onChange={(e) => setForm({ ...form, gift: e.target.value })}
-          className={inputCls}
-        >
-          <option value="">-- pick a gift from the list --</option>
-          {WISHLIST.map((w) => (
-            <option key={w.id} value={w.title} disabled={claimedGifts.includes(w.title)}>
-              {w.title} {claimedGifts.includes(w.title) ? "• claimed" : ""}
-            </option>
-          ))}
-          <option value="I'm a brokee (I'll dance)">I'm a brokee — I'll dance 💃</option>
-          <option value="Surprise gift">Surprise gift (make it iconic)</option>
-        </select>
-      </div>
-
-      {isBrokee && (
-        <div className="md:col-span-2 animate-fade-up">
-          <label className="font-hero text-xs uppercase tracking-[0.2em] text-[#9b6cb5] mb-1 block flex items-center gap-2">
-            <Music2 size={14} /> Drop your dance routine
-          </label>
-          <input
-            data-testid="rsvp-performance"
-            value={form.performance}
-            onChange={(e) => setForm({ ...form, performance: e.target.value })}
-            placeholder="e.g. Kala Chashma choreography, solo, 90 seconds"
-            className={inputCls}
-          />
-        </div>
-      )}
-
-      <div className="md:col-span-2">
-        <label className="font-hero text-xs uppercase tracking-[0.2em] text-[#9b6cb5] mb-1 block">A sweet note (optional)</label>
-        <textarea
-          data-testid="rsvp-message"
-          value={form.message}
-          onChange={(e) => setForm({ ...form, message: e.target.value })}
-          rows={3}
-          placeholder="Say something cute ♡"
-          className={inputCls + " resize-none"}
-        />
-      </div>
-
-      <div className="md:col-span-2 flex flex-col sm:flex-row items-center gap-3 mt-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          data-testid="rsvp-submit"
-          className="sticker-btn font-hero uppercase tracking-[0.2em] text-sm px-8 py-4 rounded-full inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          <Send size={16} /> {submitting ? "sending..." : "lock in my rsvp"}
-        </button>
-        <p className="font-script text-[#9b6cb5] text-lg">no empty hands allowed ♡</p>
-      </div>
-    </form>
-  );
-};
-
-// ===== RSVP wall =====
-const RsvpWall = ({ rsvps }) => {
-  if (!rsvps.length) return null;
-  const attendingEmoji = { yes: "✦", maybe: "?", no: "✗" };
-  return (
-    <div className="mt-10">
-      <h3 className="font-display text-3xl md:text-4xl text-[#4a1f3a] mb-4 text-center">
-        the <span className="text-[#9b6cb5]">guest wall</span>
-      </h3>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="rsvp-wall">
-        {rsvps.slice(0, 9).map((r) => (
-          <div key={r.id} className="rounded-2xl bg-white border-2 border-[#e8d4f3] p-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-hero text-[#4a1f3a]">{r.name}</span>
-              <span className="font-body text-[10px] uppercase tracking-widest text-[#9b6cb5]">
-                {attendingEmoji[r.attending]} {r.attending}
-              </span>
-            </div>
-            <p className="font-body text-sm text-[#7a3a5f]">
-              <span className="text-[#ff3d8a]">bringing:</span> {r.gift}
-            </p>
-            {r.performance && (
-              <p className="font-script text-sm text-[#9b6cb5] mt-1">💃 {r.performance}</p>
-            )}
-            {r.message && <p className="font-body text-xs text-[#7a3a5f] mt-2 italic">"{r.message}"</p>}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 // ===== Share button =====
 const ShareButton = () => {
   const [copied, setCopied] = useState(false);
   const url = typeof window !== "undefined" ? window.location.href : "";
-  const msg = "🎀 You're invited — It's the bestest, sweetest human's birthday! June 23, 2026. Pick a gift, RSVP, show up ✨";
+  const msg = "🎀 You're invited — It's the bestest, sweetest human's birthday! June 23, 2026. Pick a gift, show up, don't come empty-handed ✨";
 
   const share = async () => {
     try {
@@ -559,27 +264,7 @@ const PartyMarquee = () => {
 // ===== App =====
 export default function App() {
   const { d, h, m, s, done } = useCountdown(BIRTHDAY_ISO);
-  const [rsvps, setRsvps] = useState([]);
-  const [stats, setStats] = useState(null);
-  const claimedGifts = stats?.claimed_gifts || [];
   const firedOnce = useRef(false);
-
-  const loadRsvps = async () => {
-    try {
-      const [listRes, statsRes] = await Promise.all([
-        axios.get(`${API}/rsvp`),
-        axios.get(`${API}/rsvp/stats`),
-      ]);
-      setRsvps(listRes.data || []);
-      setStats(statsRes.data || null);
-    } catch (e) {
-      // silent
-    }
-  };
-
-  useEffect(() => {
-    loadRsvps();
-  }, []);
 
   useEffect(() => {
     if (firedOnce.current) return;
@@ -632,7 +317,7 @@ export default function App() {
 
             <p className="font-body text-base md:text-lg text-[#7a3a5f] max-w-xl mt-6 animate-fade-up" style={{ animationDelay: "240ms" }}>
               Bows tied. Poppers loaded. Confetti standing by. Scroll down for
-              the countdown, the Very Important Wishlist™, and the RSVP.
+              the countdown, the Very Important Wishlist™, and the dress code.
               <b className="text-[#9b6cb5]"> No one comes empty-handed.</b>
             </p>
 
@@ -644,8 +329,8 @@ export default function App() {
               >
                 <PartyPopper size={18} /> pop the confetti
               </button>
-              <a href="#rsvp" data-testid="cta-rsvp" className="font-hero uppercase tracking-[0.2em] text-sm px-7 py-4 rounded-full inline-flex items-center gap-2 bg-white border-2 border-[#9b6cb5] text-[#9b6cb5] hover:bg-[#f4eafa] transition-colors">
-                <Send size={18} /> rsvp now
+              <a href="#wishlist" data-testid="cta-wishlist" className="font-hero uppercase tracking-[0.2em] text-sm px-7 py-4 rounded-full inline-flex items-center gap-2 bg-white border-2 border-[#9b6cb5] text-[#9b6cb5] hover:bg-[#f4eafa] transition-colors">
+                <Gift size={18} /> see the wishlist
               </a>
             </div>
           </div>
@@ -682,13 +367,8 @@ export default function App() {
 
       <PartyMarquee />
 
-      {/* LIVE PARTY TRACKER */}
-      <section className="relative z-10 pt-16">
-        <PartyStats stats={stats} />
-      </section>
-
       {/* COUNTDOWN */}
-      <section id="timer" className="relative z-10 max-w-6xl mx-auto px-6 py-20">
+      <section id="timer" className="relative z-10 max-w-6xl mx-auto px-6 py-24">
         <div className="text-center mb-10">
           <span className="font-body text-xs uppercase tracking-[0.3em] text-[#ff3d8a]">✦ the countdown ✦</span>
           <h2 className="font-display text-5xl md:text-7xl text-[#4a1f3a] mt-3">
@@ -759,6 +439,71 @@ export default function App() {
         </div>
       </section>
 
+      {/* MEET HER */}
+      <section id="meet-her" className="relative z-10 max-w-6xl mx-auto px-6 pb-24">
+        <div className="grid md:grid-cols-[1fr_1.1fr] gap-10 md:gap-14 items-center">
+          <div className="relative mx-auto md:mx-0 max-w-sm w-full">
+            <div className="absolute -top-6 -left-6 animate-wiggle z-10" style={{ transformOrigin: "center" }}>
+              <Bow size={72} color="#ff3d8a" ribbon="#ffc2dc" />
+            </div>
+            <div className="absolute -bottom-4 -right-2 animate-float z-10" style={{ "--r": "14deg" }}>
+              <Heart size={44} color="#9b6cb5" />
+            </div>
+
+            <div data-testid="meet-her-polaroid" className="bg-white p-4 pb-6 rounded-[28px] rotate-[-4deg] shadow-[0_20px_60px_rgba(255,61,138,0.25)] border-2 border-[#ffc2dc] relative">
+              <div className="relative rounded-[20px] overflow-hidden">
+                <img
+                  src="https://customer-assets.emergentagent.com/job_birthday-countdown-35/artifacts/lhs7skj1_CD3A0C7A-FF50-4468-BC42-2F4E218F0617.jpeg"
+                  alt="Tiny birthday girl smiling"
+                  className="w-full h-[420px] object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,61,138,0.08) 100%)" }} />
+                <Sparkle size={26} color="#ff3d8a" className="absolute top-4 right-4 animate-sparkle" />
+                <Sparkle size={18} color="#fff" className="absolute bottom-6 left-4 animate-sparkle" style={{ animationDelay: "0.7s" }} />
+                <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur font-hero text-[10px] uppercase tracking-[0.2em] text-[#ff3d8a] border-2 border-[#ffc2dc]">
+                  est. 2006 ♡
+                </div>
+              </div>
+              <p className="font-script text-center text-2xl text-[#ff3d8a] mt-4">exhibit A ♡</p>
+            </div>
+          </div>
+
+          <div>
+            <span className="font-body text-xs uppercase tracking-[0.3em] text-[#9b6cb5]">✦ emotional damage incoming ✦</span>
+            <h2 className="font-display text-5xl md:text-7xl text-[#4a1f3a] mt-3 leading-[0.95]">
+              how do you say
+              <br />
+              <span className="text-[#ff3d8a]">no</span> to this face?
+            </h2>
+            <p className="font-body text-base md:text-lg text-[#7a3a5f] mt-5 leading-relaxed max-w-lg">
+              Exactly. You don't. This tiny diva with the dimples and the
+              cheekiest smirk has been waiting{" "}
+              <b className="text-[#9b6cb5]">{AGE_TURNING} whole years</b> for
+              this birthday. The wishlist below is not a suggestion — it's a
+              love language.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              {["dimples certified", "serial cutie", "future diva", "will pout if empty-handed"].map((t) => (
+                <span key={t} className="font-hero text-[10px] uppercase tracking-[0.18em] px-3 py-2 rounded-full bg-white border-2 border-[#ffc2dc] text-[#ff3d8a]">
+                  {t} ♡
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-8">
+              <a href="#wishlist" data-testid="meet-her-cta" className="sticker-btn font-hero uppercase tracking-[0.2em] text-sm px-7 py-4 rounded-full inline-flex items-center gap-2">
+                <Gift size={18} /> okay fine, show me the list
+              </a>
+              <p className="font-script text-[#9b6cb5] text-lg mt-3">
+                she's been this cute since 2006 — that's seniority ♡
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* WISHLIST */}
       <section id="wishlist" className="relative z-10 max-w-6xl mx-auto px-6 pb-24">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
@@ -781,12 +526,12 @@ export default function App() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8" data-testid="wishlist-grid">
           {WISHLIST.map((item, idx) => (
-            <WishCard key={item.id} item={item} idx={idx} claimedGifts={claimedGifts} />
+            <WishCard key={item.id} item={item} idx={idx} />
           ))}
         </div>
       </section>
 
-      {/* RSVP */}
+      {/* RSVP — DM to RSVP (no backend) */}
       <section id="rsvp" className="relative z-10 max-w-4xl mx-auto px-6 pb-24">
         <div className="text-center mb-8">
           <span className="font-body text-xs uppercase tracking-[0.3em] text-[#9b6cb5]">✦ rsvp required ✦</span>
@@ -794,16 +539,42 @@ export default function App() {
             are you <span className="text-[#9b6cb5]">coming</span>?
           </h2>
           <p className="font-body text-[#7a3a5f] mt-3 max-w-lg mx-auto">
-            Lock in your name, pick your gift from the wishlist (or admit you're
-            a brokee and commit to a dance). No skipping.
+            Screenshot the gift you're bringing, DM it to me, and consider
+            yourself on the list. Simple, iconic, traceable.
           </p>
         </div>
 
-        <div className="gloss-card rounded-[36px] p-6 md:p-10">
-          <RsvpForm claimedGifts={claimedGifts} onSubmitted={loadRsvps} />
-        </div>
+        <div className="gloss-card rounded-[36px] p-8 md:p-12 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-[#ff3d8a] to-[#9b6cb5] text-white mb-5 shadow-lg">
+            <MessageCircle size={38} strokeWidth={2} />
+          </div>
+          <h3 className="font-hero text-3xl md:text-4xl text-[#4a1f3a] leading-tight">
+            slide into my DMs ♡
+          </h3>
+          <p className="font-body text-[#7a3a5f] mt-4 max-w-xl mx-auto">
+            Send me a screenshot of which gift you're bringing (or which dance
+            you're doing, brokee). <b className="text-[#9b6cb5]">1 gift = 1 person</b>,
+            first-come first-serve. Surprises allowed if they slap.
+          </p>
 
-        <RsvpWall rsvps={rsvps} />
+          <div className="grid sm:grid-cols-3 gap-3 mt-8 max-w-xl mx-auto">
+            {[
+              { n: "1", t: "pick your gift", d: "from the list above" },
+              { n: "2", t: "screenshot it", d: "or the whole card" },
+              { n: "3", t: "DM me 📲", d: "whatsapp / insta" },
+            ].map((st) => (
+              <div key={st.n} className="rounded-2xl bg-[#fff5fa] border-2 border-[#ffc2dc] p-4">
+                <div className="font-display text-4xl text-[#ff3d8a]">{st.n}</div>
+                <div className="font-hero text-sm text-[#4a1f3a] mt-1">{st.t}</div>
+                <div className="font-body text-xs text-[#7a3a5f] mt-1">{st.d}</div>
+              </div>
+            ))}
+          </div>
+
+          <p className="font-script text-xl text-[#9b6cb5] mt-8">
+            empty-handers ignored on sight ♡
+          </p>
+        </div>
       </section>
 
       {/* FOOTER */}
