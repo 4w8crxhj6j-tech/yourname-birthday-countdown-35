@@ -14,6 +14,8 @@ const API = `${BACKEND_URL}/api`;
 
 const BIRTHDAY_ISO = "2026-06-23T00:00:00";
 const BIRTHDAY_LABEL = "June 23, 2026";
+const AGE_TURNING = 20; // born 2006 → turning 20 on 2026-06-23
+const TOTAL_WISHLIST = 11;
 
 const WISHLIST = [
   { id: 1, title: "Sea-Facing Penthouse", tag: "house-warming 101", note: "With a balcony where the breeze and the drama both hit different. Keys on June 23 pls.", icon: Home, accent: "#ff3d8a" },
@@ -81,6 +83,28 @@ function useCountdown(target) {
   return t;
 }
 
+// Animated number
+function useCountUp(target, dur = 900) {
+  const [v, setV] = useState(0);
+  const from = useRef(0);
+  useEffect(() => {
+    const start = performance.now();
+    const startVal = from.current;
+    const delta = (target || 0) - startVal;
+    let raf;
+    const tick = (now) => {
+      const p = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setV(Math.round(startVal + delta * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else from.current = target || 0;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, dur]);
+  return v;
+}
+
 // ===== Small UI bits =====
 const TimerCell = ({ value, label }) => (
   <div
@@ -95,6 +119,84 @@ const TimerCell = ({ value, label }) => (
     </span>
   </div>
 );
+
+const StatTile = ({ value, label, sub, color, icon: Icon, testid }) => {
+  const v = useCountUp(value);
+  return (
+    <div
+      data-testid={testid}
+      className="rounded-[28px] bg-white border-2 p-5 md:p-6 flex flex-col items-center text-center relative overflow-hidden"
+      style={{ borderColor: color + "55", boxShadow: `0 10px 30px ${color}22` }}
+    >
+      <span className="absolute -top-3 -right-3 w-16 h-16 rounded-full opacity-10" style={{ background: color }} />
+      <Icon size={22} strokeWidth={2.5} style={{ color }} />
+      <div className="font-hero text-4xl md:text-5xl mt-2 tabular-nums" style={{ color }}>
+        {v}
+      </div>
+      <div className="font-hero text-[11px] md:text-xs uppercase tracking-[0.22em] text-[#4a1f3a] mt-1">
+        {label}
+      </div>
+      {sub && <div className="font-script text-sm md:text-base mt-1" style={{ color }}>{sub}</div>}
+    </div>
+  );
+};
+
+const PartyStats = ({ stats }) => {
+  const yes = stats?.yes || 0;
+  const brokees = stats?.brokees || 0;
+  const claimed = stats?.claimed_wishlist_count || 0;
+  const progress = Math.min(100, Math.round((claimed / TOTAL_WISHLIST) * 100));
+
+  let snark = "still room for everyone ♡";
+  if (yes === 0) snark = "be the first bestie to lock it in";
+  else if (yes < 5) snark = `${yes} brave souls so far`;
+  else if (yes < 15) snark = "the guest list is heating up";
+  else snark = "sold-out energy ♡";
+
+  let brokeeSnark = "no dancers yet… suspicious";
+  if (brokees === 1) brokeeSnark = "1 brave brokee booked a routine";
+  else if (brokees > 1) brokeeSnark = `${brokees} performances incoming`;
+
+  let giftSnark = "the wishlist is wide open";
+  if (claimed === TOTAL_WISHLIST) giftSnark = "ICONIC — wishlist sold out ♡";
+  else if (claimed >= TOTAL_WISHLIST - 2) giftSnark = "almost cleared, quick ♡";
+  else if (claimed > 0) giftSnark = `${TOTAL_WISHLIST - claimed} gifts unclaimed`;
+
+  return (
+    <div className="max-w-5xl mx-auto px-6 pb-6" data-testid="party-stats">
+      <div className="text-center mb-6">
+        <span className="font-body text-xs uppercase tracking-[0.3em] text-[#9b6cb5]">
+          ✦ live party tracker ✦
+        </span>
+        <h2 className="font-display text-3xl md:text-5xl text-[#4a1f3a] mt-2">
+          the <span className="text-[#ff3d8a]">vibe check</span> board
+        </h2>
+      </div>
+      <div className="grid grid-cols-3 gap-3 md:gap-5">
+        <StatTile testid="stat-besties" value={yes} label="besties confirmed" sub={snark} color="#ff3d8a" icon={PartyPopper} />
+        <StatTile testid="stat-gifts" value={claimed} label={`gifts claimed / ${TOTAL_WISHLIST}`} sub={giftSnark} color="#9b6cb5" icon={Gift} />
+        <StatTile testid="stat-brokees" value={brokees} label="brokees dancing" sub={brokeeSnark} color="#c9a3d9" icon={Music2} />
+      </div>
+
+      <div className="mt-5">
+        <div className="flex items-center justify-between font-body text-xs uppercase tracking-[0.2em] text-[#7a3a5f] mb-2">
+          <span>wishlist progress</span>
+          <span data-testid="progress-text">{claimed}/{TOTAL_WISHLIST} ({progress}%)</span>
+        </div>
+        <div className="h-3 rounded-full bg-[#ffe4f1] overflow-hidden border border-[#ffc2dc]">
+          <div
+            data-testid="progress-bar"
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${progress}%`,
+              background: "linear-gradient(90deg, #ff3d8a 0%, #c9a3d9 60%, #9b6cb5 100%)",
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Streamers = () => {
   const colors = ["#ff3d8a", "#ff80b5", "#d9b8ff", "#c9a3d9", "#ffc2dc", "#9b6cb5"];
@@ -458,7 +560,8 @@ const PartyMarquee = () => {
 export default function App() {
   const { d, h, m, s, done } = useCountdown(BIRTHDAY_ISO);
   const [rsvps, setRsvps] = useState([]);
-  const [claimedGifts, setClaimedGifts] = useState([]);
+  const [stats, setStats] = useState(null);
+  const claimedGifts = stats?.claimed_gifts || [];
   const firedOnce = useRef(false);
 
   const loadRsvps = async () => {
@@ -468,7 +571,7 @@ export default function App() {
         axios.get(`${API}/rsvp/stats`),
       ]);
       setRsvps(listRes.data || []);
-      setClaimedGifts(statsRes.data?.claimed_gifts || []);
+      setStats(statsRes.data || null);
     } catch (e) {
       // silent
     }
@@ -513,7 +616,7 @@ export default function App() {
         <div className="grid md:grid-cols-[1.3fr_1fr] gap-10 items-center">
           <div>
             <span data-testid="hero-eyebrow" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border-2 border-[#ffc2dc] font-body text-xs uppercase tracking-[0.25em] text-[#ff3d8a] animate-fade-up">
-              <PartyPopper size={14} /> pink alert • party mode • {BIRTHDAY_LABEL}
+              <PartyPopper size={14} /> pink alert • turning {AGE_TURNING} • {BIRTHDAY_LABEL}
             </span>
 
             <h1 data-testid="hero-title" className="font-display text-[54px] sm:text-[78px] lg:text-[104px] leading-[0.92] text-[#ff3d8a] mt-6 animate-fade-up" style={{ animationDelay: "120ms" }}>
@@ -579,14 +682,21 @@ export default function App() {
 
       <PartyMarquee />
 
+      {/* LIVE PARTY TRACKER */}
+      <section className="relative z-10 pt-16">
+        <PartyStats stats={stats} />
+      </section>
+
       {/* COUNTDOWN */}
-      <section id="timer" className="relative z-10 max-w-6xl mx-auto px-6 py-24">
+      <section id="timer" className="relative z-10 max-w-6xl mx-auto px-6 py-20">
         <div className="text-center mb-10">
           <span className="font-body text-xs uppercase tracking-[0.3em] text-[#ff3d8a]">✦ the countdown ✦</span>
           <h2 className="font-display text-5xl md:text-7xl text-[#4a1f3a] mt-3">
             until the <span className="text-[#ff3d8a]">diva day</span>
           </h2>
-          <p className="font-body text-[#7a3a5f] mt-3">Live ticking. Heart palpitating. Glitter descending.</p>
+          <p className="font-body text-[#7a3a5f] mt-3">
+            {done ? "It's today — the world owes you flowers ♡" : `you have exactly ${d} days to NOT be empty-handed ♡`}
+          </p>
         </div>
 
         <div data-testid="countdown-board" className="gloss-card rounded-[36px] p-6 md:p-10 flex flex-col items-center">

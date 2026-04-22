@@ -113,14 +113,19 @@ async def rsvp_stats():
     yes = await db.rsvps.count_documents({"attending": "yes"})
     maybe = await db.rsvps.count_documents({"attending": "maybe"})
     no = await db.rsvps.count_documents({"attending": "no"})
-    # gifts claimed (unique gift strings)
+    brokees = await db.rsvps.count_documents({"gift": "I'm a brokee (I'll dance)"})
     claimed = await db.rsvps.distinct("gift")
+    # only count real wishlist gifts (exclude the brokee + surprise values) for the claimed counter
+    non_wishlist = {"I'm a brokee (I'll dance)", "Surprise gift"}
+    claimed_wishlist_count = len([g for g in claimed if g not in non_wishlist])
     return {
         "total": total,
         "yes": yes,
         "maybe": maybe,
         "no": no,
+        "brokees": brokees,
         "claimed_gifts": claimed,
+        "claimed_wishlist_count": claimed_wishlist_count,
     }
 
 
