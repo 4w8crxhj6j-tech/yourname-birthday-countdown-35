@@ -38,6 +38,16 @@ let webpackConfig = {
     },
     configure: (webpackConfig) => {
 
+      // Disable ForkTsCheckerWebpackPlugin — its bundled ajv-keywords has a
+      // broken nested install that crashes Vercel/npm builds. We don't use
+      // TypeScript, so it's safe to remove.
+      if (webpackConfig.plugins && Array.isArray(webpackConfig.plugins)) {
+        webpackConfig.plugins = webpackConfig.plugins.filter(
+          (plugin) =>
+            plugin && plugin.constructor && plugin.constructor.name !== "ForkTsCheckerWebpackPlugin"
+        );
+      }
+
       // Add ignored patterns to reduce watched directories
         webpackConfig.watchOptions = {
           ...webpackConfig.watchOptions,
