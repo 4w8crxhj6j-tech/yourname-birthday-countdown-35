@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Caveat+Brush&family=Quicksand:wght@400;500;600;700&family=Pacifico&display=swap');
+
+body {
+    margin: 0;
+    font-family: 'Quicksand', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #fff0f6;
+    color: #4a1f3a;
+    overflow-x: hidden;
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+/* Girlypop palette */
+:root {
+    --gp-hot-pink: #ff3d8a;
+    --gp-pink: #ff80b5;
+    --gp-bubble: #ffc2dc;
+    --gp-cream: #fff5fa;
+    --gp-lilac: #d9b8ff;
+    --gp-gloss: #ffffff;
+    --gp-deep: #4a1f3a;
+}
+
+/* Selection */
+::selection {
+    background: var(--gp-hot-pink);
+    color: #fff;
+}
+
+/* Custom cursor feel with scrollbar */
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: #ffe4f1; }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(#ff80b5, #ff3d8a);
+    border-radius: 10px;
+    border: 3px solid #ffe4f1;
+}
+
+@layer base {
+    :root {
+        --background: 340 100% 97%;
+        --foreground: 327 42% 20%;
+        --card: 0 0% 100%;
+        --card-foreground: 327 42% 20%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 327 42% 20%;
+        --primary: 332 100% 62%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 330 100% 92%;
+        --secondary-foreground: 327 42% 20%;
+        --muted: 330 100% 94%;
+        --muted-foreground: 327 20% 45%;
+        --accent: 270 80% 85%;
+        --accent-foreground: 327 42% 20%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 330 80% 88%;
+        --input: 330 80% 88%;
+        --ring: 332 100% 62%;
+        --radius: 1rem;
+    }
+}
+
+@layer base {
+    * { @apply border-border; }
+    body { @apply bg-background text-foreground; }
+}
+
+/* ======= Typography ======= */
+.font-display { font-family: 'Caveat Brush', cursive; letter-spacing: 0.02em; }
+.font-hero { font-family: 'Fredoka', sans-serif; font-weight: 700; }
+.font-script { font-family: 'Pacifico', cursive; }
+.font-body { font-family: 'Quicksand', sans-serif; }
+
+/* ======= Animations ======= */
+@keyframes float-up {
+    0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+    50% { transform: translateY(-14px) rotate(var(--r, 0deg)); }
+}
+@keyframes wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+}
+@keyframes sparkle {
+    0%, 100% { opacity: 0.2; transform: scale(0.8) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+}
+@keyframes rise {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+}
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.08); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.04); }
+}
+@keyframes gloss-sweep {
+    0% { transform: translateX(-150%) skewX(-20deg); }
+    100% { transform: translateX(250%) skewX(-20deg); }
+}
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float { animation: float-up 4s ease-in-out infinite; }
+.animate-wiggle { animation: wiggle 2s ease-in-out infinite; }
+.animate-sparkle { animation: sparkle 2.5s ease-in-out infinite; }
+.animate-heartbeat { animation: heartbeat 2s ease-in-out infinite; }
+.animate-fade-up { animation: fade-up 0.8s ease-out both; }
+
+/* ======= Bow SVG backgrounds ======= */
+.bow-bg {
+    background-image:
+        radial-gradient(circle at 10% 20%, rgba(255, 192, 220, 0.5) 0%, transparent 25%),
+        radial-gradient(circle at 85% 70%, rgba(217, 184, 255, 0.4) 0%, transparent 28%),
+        radial-gradient(circle at 50% 100%, rgba(255, 128, 181, 0.3) 0%, transparent 35%);
+}
+
+/* Glossy card effect */
+.gloss-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, #fff 0%, #fff5fa 100%);
+    border: 2px solid #ffc2dc;
+    box-shadow:
+        0 10px 30px rgba(255, 61, 138, 0.15),
+        0 2px 4px rgba(255, 61, 138, 0.1),
+        inset 0 -2px 0 rgba(255, 61, 138, 0.08);
+}
+.gloss-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.6) 50%, transparent 60%);
+    transform: translateX(-150%) skewX(-20deg);
+    pointer-events: none;
+}
+.gloss-card:hover::after {
+    animation: gloss-sweep 1.2s ease-out;
+}
+
+/* Timer pill */
+.timer-pill {
+    background: linear-gradient(180deg, #ffffff 0%, #ffe4f1 100%);
+    border: 3px solid #ff80b5;
+    box-shadow:
+        inset 0 4px 0 rgba(255,255,255,0.9),
+        inset 0 -4px 0 rgba(255,61,138,0.15),
+        0 8px 20px rgba(255, 61, 138, 0.25);
+    border-radius: 28px;
+}
+
+/* Big sticker button */
+.sticker-btn {
+    background: linear-gradient(180deg, #ff80b5 0%, #ff3d8a 100%);
+    color: #fff;
+    border: 3px solid #fff;
+    box-shadow:
+        0 0 0 3px #ff3d8a,
+        0 10px 0 #c92a70,
+        0 14px 24px rgba(255, 61, 138, 0.4);
+    transition: all 0.15s ease;
+}
+.sticker-btn:hover { transform: translateY(2px); box-shadow: 0 0 0 3px #ff3d8a, 0 6px 0 #c92a70, 0 10px 18px rgba(255, 61, 138, 0.4); }
+.sticker-btn:active { transform: translateY(8px); box-shadow: 0 0 0 3px #ff3d8a, 0 2px 0 #c92a70, 0 6px 12px rgba(255, 61, 138, 0.4); }
+
+/* Holo tag */
+.holo {
+    background: linear-gradient(120deg, #ffc2dc, #d9b8ff, #ffc2dc, #fff);
+    background-size: 300% 300%;
+    animation: holo-shift 6s linear infinite;
+}
+@keyframes holo-shift { 0% { background-position: 0% 0%; } 100% { background-position: 300% 0%; } }
+
+/* Dotted cute underline */
+.cute-underline {
+    background-image: radial-gradient(circle, #ff3d8a 1.5px, transparent 2px);
+    background-size: 10px 10px;
+    background-repeat: repeat-x;
+    background-position: bottom;
+    padding-bottom: 8px;
+}
+
+/* Paper texture overlay */
+.paper {
+    background-color: #fff5fa;
+    background-image:
+        radial-gradient(#ffc2dc 1px, transparent 1px),
+        radial-gradient(#ffd6e8 1px, transparent 1px);
+    background-size: 28px 28px, 28px 28px;
+    background-position: 0 0, 14px 14px;
+}
