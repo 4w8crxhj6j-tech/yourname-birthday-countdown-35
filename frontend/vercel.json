@@ -1,6 +1,6 @@
 {
-  "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "CI=false npm run build",
+  "installCommand": "yarn install --frozen-lockfile",
+  "buildCommand": "CI=false yarn build",
   "outputDirectory": "build",
   "framework": "create-react-app"
 }
